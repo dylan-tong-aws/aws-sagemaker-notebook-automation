@@ -1,0 +1,263 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: SnowFlake SageMaker Notebook
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Required SageMaker Parameters
+        Parameters:
+          - pNotebookInstanceName
+          - pNotebookInstanceType
+      - Label:
+          default: Optional SageMaker Parameters
+        Parameters:
+          - pRootAccess
+          - pSubnetId
+          - pSecurityGroupIds
+          - pKMSKeyId
+          - pAcceleratorType
+          - pDefaultCodeRepository
+          - pSageMakerRoleArn
+    ParameterLabels:
+      pVolumeSizeInGB:
+        default: Volume Size (GB)
+      pRootAccess:
+        default: Root Access
+      pKMSKeyId:
+        default: KMS Key Id
+      pNotebookInstanceName:
+        default: Notebook Instance Name
+      pNotebookInstanceType:
+        default: Notebook Instance Type
+      pSubnetId:
+        default: Subnet Id
+      pSecurityGroupIds:
+        default: Security Group Ids
+      pSageMakerRoleArn:
+        default: SageMaker IAM Role
+      pAcceleratorType:
+        default: Accelerator Type
+      pDefaultCodeRepository:
+        default: Default Code Repository
+Parameters:
+  pNotebookInstanceName:
+    AllowedPattern: '[A-Za-z0-9-]{1,63}'
+    ConstraintDescription: >-
+      Maximum of 63 alphanumeric characters. Can include hyphens (-), but not
+      spaces. Must be unique within your account in an AWS Region.
+    Description: SageMaker Notebook instance name
+    MaxLength: '63'
+    MinLength: '1'
+    Type: String
+  pNotebookInstanceType:
+    AllowedValues:
+      - ml.c4.2xlarge
+      - ml.c4.4xlarge
+      - ml.c4.8xlarge
+      - ml.c4.xlarge
+      - ml.c5.18xlarge
+      - ml.c5.2xlarge
+      - ml.c5.4xlarge
+      - ml.c5.9xlarge
+      - ml.c5.xlarge
+      - ml.c5d.18xlarge
+      - ml.c5d.2xlarge
+      - ml.c5d.4xlarge
+      - ml.c5d.9xlarge
+      - ml.c5d.xlarge
+      - ml.m4.10xlarge
+      - ml.m4.16xlarge
+      - ml.m4.2xlarge
+      - ml.m4.4xlarge
+      - ml.m4.xlarge
+      - ml.m5.12xlarge
+      - ml.m5.24xlarge
+      - ml.m5.2xlarge
+      - ml.m5.4xlarge
+      - ml.m5.xlarge
+      - ml.p2.16xlarge
+      - ml.p2.8xlarge
+      - ml.p2.xlarge
+      - ml.p3.16xlarge
+      - ml.p3.2xlarge
+      - ml.p3.8xlarge
+      - ml.t2.2xlarge
+      - ml.t2.large
+      - ml.t2.medium
+      - ml.t2.xlarge
+      - ml.t3.2xlarge
+      - ml.t3.large
+      - ml.t3.medium
+      - ml.t3.xlarge
+    ConstraintDescription: Must select a valid notebook instance type.
+    Default: ml.t2.medium
+    Description: Select Instance type for the SageMaker Notebook
+    Type: String
+  pAcceleratorType:
+    AllowedValues:
+      - ''
+      - ml.eia1.medium
+      - ml.eia1.large
+      - ml.eia1.xlarge
+    Description: >-
+      Optionally attach an accelerator type for GPU inference using Amazon
+      Elastic Inference.
+    Default: ''
+    Type: String
+  pSubnetId:
+    Description: Select the subnets where you like the notebook instance to be deployed.
+    Type: String
+    Default: ''
+    AllowedPattern: ^$|subnet-[-0-9a-zA-Z]+
+  pSecurityGroupIds:
+    Description: Select a security group for Notebooks deployed in a VPC
+    Type: List<String>
+    Default: ''
+    AllowedPattern: ^$|^sg-[-0-9a-zA-Z]+
+  pSageMakerRoleArn:
+    Description: >-
+      ARN of the SageMaker IAM execution role. If you don't specify a role, a
+      new role is created with AmazonSageMakerFullAccess managed policy and
+      access is provided to SageMakerS3Bucket, if provided.
+    Type: String
+    Default: ''
+  pKMSKeyId:
+    Description: >-
+      AWS KMS key ID used to encrypt data at rest on the ML storage volume
+      attached to notebook instance.
+    Type: String
+    Default: ''
+  pRootAccess:
+    Description: Whther or not to provide users with root access.
+    Type: String
+    AllowedValues:
+      - Enabled
+      - Disabled
+    Default: Enabled
+  pVolumeSizeInGB:
+    Description: >-
+      Enter the volume size of the notebook instance in GB. The volume size must
+      be from 5 GB to 16384 GB (16 TB).
+    Type: Number
+    Default: 5
+    MinValue: 5
+    MaxValue: 16384
+  pDefaultCodeRepository:
+    Description: >-
+      Jupyter will start in this repository by default if one is provided.
+      Repositories are added to your home directory.
+    Type: String
+    MaxLength: 1024
+    AllowedPattern: '^$|^https://([^/]+)/?(.*)$|^[a-zA-Z0-9](-*[a-zA-Z0-9])*'
+    Default: ''
+Conditions:
+  cRoleArnEmpty: !Equals 
+    - !Ref pSageMakerRoleArn
+    - ''
+  cKMSKeyNotEmpty: !Not 
+    - !Equals 
+      - !Ref pKMSKeyId
+      - ''
+  cDefaultCodeRepoNotEmpty: !Not 
+    - !Equals 
+      - !Ref pDefaultCodeRepository
+      - ''
+  cSubnetNotEmpty: !Not 
+    - !Equals 
+      - !Ref pSubnetId
+      - ''
+  cSubnetEmpty: !Equals 
+    - !Ref pSubnetId
+    - ''
+  cSecurityGroupNotEmpty: !Not 
+    - !Equals 
+      - !Select 
+        - '0'
+        - !Ref pSecurityGroupIds
+      - ''
+  cAcceleratorTypeNotEmpty: !Not 
+    - !Equals 
+      - !Ref pAcceleratorType
+      - ''
+  cAcceleratorTypeAttachable: !And 
+    - !Condition cAcceleratorTypeNotEmpty
+    - !Condition cSubnetEmpty
+Resources:
+  SnowFlakeNotebookLifeCycleConfig:
+    Type: 'AWS::SageMaker::NotebookInstanceLifecycleConfig'
+    Properties:
+      OnCreate:
+        - Content: !Base64 >
+            #!/bin/bash
+
+            set -e
+
+            sudo -u ec2-user -i <<'EOF'
+                    
+            SUPPORTED_KERNELS=(tensorflow_p36 pytorch_p36 mxnet_p36 python3
+            amazonei_tensorflow_p36)
+
+
+            for env in "${SUPPORTED_KERNELS[@]}";
+
+            do
+                source /home/ec2-user/anaconda3/bin/activate "$env"
+                nohup pip install --upgrade snowflake-connector-python &
+                source /home/ec2-user/anaconda3/bin/deactivate
+            done
+
+
+            EOF
+  SnowFlakeNotebookInstance:
+    Type: 'AWS::SageMaker::NotebookInstance'
+    Properties:
+      NotebookInstanceName: !Ref pNotebookInstanceName
+      InstanceType: !Ref pNotebookInstanceType
+      RoleArn: !If 
+        - cRoleArnEmpty
+        - !GetAtt ExecutionRole.Arn
+        - !Ref pSageMakerRoleArn
+      LifecycleConfigName: !GetAtt SnowFlakeNotebookLifeCycleConfig.NotebookInstanceLifecycleConfigName
+      KmsKeyId: !If 
+        - cKMSKeyNotEmpty
+        - !Ref pKMSKeyId
+        - !Ref 'AWS::NoValue'
+      SecurityGroupIds: !If 
+        - cSecurityGroupNotEmpty
+        - !Ref pSecurityGroupIds
+        - !Ref 'AWS::NoValue'
+      SubnetId: !If 
+        - cSubnetNotEmpty
+        - !Ref pSubnetId
+        - !Ref 'AWS::NoValue'
+      AcceleratorTypes:
+        - !If 
+          - cAcceleratorTypeAttachable
+          - !Ref pAcceleratorType
+          - !Ref 'AWS::NoValue'
+      VolumeSizeInGB: !Ref pVolumeSizeInGB
+      RootAccess: !Ref pRootAccess
+      DefaultCodeRepository: !If 
+        - cDefaultCodeRepoNotEmpty
+        - !Ref pDefaultCodeRepository
+        - !Ref 'AWS::NoValue'
+  ExecutionRole:
+    Condition: cRoleArnEmpty
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSageMakerFullAccess'
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+      Path: /service-role/
+Outputs:
+  NotebookARN:
+    Description: Snowflake SageMaker Notebook ARN
+    Value: !Ref SnowFlakeNotebookInstance
