@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: SnowFlake SageMaker Notebook
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Required SageMaker Parameters
+        Parameters:
+          - pNotebookInstanceName
+          - pNotebookInstanceType
+      - Label:
+          default: Optional SageMaker Parameters
+        Parameters:
+          - pRootAccess
+          - pSubnetId
+          - pSecurityGroupIds
+          - pKMSKeyId
+          - pAcceleratorType
+          - pDefaultCodeRepository
+          - pSageMakerRoleArn
+Resources:
+  SnowFlakeNotebookLifeCycleConfig:
+    Type: 'AWS::SageMaker::NotebookInstanceLifecycleConfig'
+    Properties:
+      NotebookInstanceLifecycleConfigName: "Snowflake-Connector"
+      OnCreate:
+        - Content: !Base64 >
+            #!/bin/bash
+
+            set -e
+
+            sudo -u ec2-user -i <<'EOF'
+                    
+            SUPPORTED_KERNELS=($(ls -d /home/ec2-user/anaconda3/envs/* |  grep -E 'tensorflow|mxnet|pytorch|python'))
+
+            for env in "${SUPPORTED_KERNELS[@]}";
+
+            do
+                source /home/ec2-user/anaconda3/bin/activate $(basename "$env")
+                nohup pip install --upgrade snowflake-connector-python==2.0.3 &
+                source /home/ec2-user/anaconda3/bin/deactivate
+            done
+
+            EOF
+Outputs:
+  SnowFlakeConnectorLifeCycleConfigARN:
+    Description: SnowFlake Connector Configuration ARN
+    Value: !Ref SnowFlakeNotebookLifeCycleConfig
