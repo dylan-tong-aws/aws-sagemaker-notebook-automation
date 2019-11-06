@@ -128,7 +128,7 @@ Parameters:
     Type: String
     Default: ''
   pRootAccess:
-    Description: Whther or not to provide users with root access.
+    Description: Whether or not to provide users with root access.
     Type: String
     AllowedValues:
       - Enabled
