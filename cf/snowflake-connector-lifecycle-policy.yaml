@@ -23,8 +23,8 @@ Resources:
     Type: 'AWS::SageMaker::NotebookInstanceLifecycleConfig'
     Properties:
       NotebookInstanceLifecycleConfigName: "Snowflake-Connector"
-      OnCreate:
-        - Content: !Base64 >
+      OnStart:
+         - Content: !Base64 >
             #!/bin/bash
 
             set -e
@@ -42,6 +42,7 @@ Resources:
             done
 
             EOF
+      
 Outputs:
   SnowFlakeConnectorLifeCycleConfigARN:
     Description: SnowFlake Connector Configuration ARN
