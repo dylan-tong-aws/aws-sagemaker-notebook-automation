@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  CloudFormation template for deploying a SageMaker Studio Environment Author:
+  Dylan Tong, AWS
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Amazon SageMaker Studio Parameters
+        Parameters:
+          - pDomainName
+    ParameterLabels:
+      pDomainName:
+        default: Amazon SageMaker Studio Domain Name
+Parameters:
+  pDomainName:
+    AllowedPattern: '[A-Za-z0-9-]{1,63}'
+    ConstraintDescription: >-
+      Maximum of 63 alphanumeric characters. Can include hyphens (-), but not
+      spaces. Must be unique within your account in an AWS Region.
+    Description: Name of the Amazon SageMaker Studio domain
+    MaxLength: 63
+    MinLength: 1
+    Type: String
+    Default: cf-sagemaker-studio
+Resources:
+  SageMakerExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'cf-sm-studio-role-${AWS::Region}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSageMakerFullAccess'
+  StudioDomainNoVPC:
+    Type: 'AWS::SageMaker::Domain'
+    Properties:
+      AppNetworkAccessType: "PublicInternetOnly"
+      AuthMode: "IAM"
+      DefaultUserSettings:
+        ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
+      DomainName: !Ref pDomainName

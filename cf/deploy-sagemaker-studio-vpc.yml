@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  CloudFormation template for deploying a SageMaker Studio Environment Author:
+  Dylan Tong, AWS
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Amazon SageMaker Studio Parameters
+        Parameters:
+          - pDomainName
+      - Label:
+          default: VPC Configurations for Amazon SageMaker Studio
+          Parameters:
+            - pVPCId
+            - pSubnetIds
+            - pSecurityGroups
+    ParameterLabels:
+      pDomainName:
+        default: Amazon SageMaker Studio Domain Name
+      pVPCId:
+        default: VPC 
+      pSubnetIds:
+        default: VPC Subnets
+      pSecurityGroups:
+        default: Security Group
+Parameters:
+  pDomainName:
+    AllowedPattern: '[A-Za-z0-9-]{1,63}'
+    ConstraintDescription: >-
+      Maximum of 63 alphanumeric characters. Can include hyphens (-), but not
+      spaces. Must be unique within your account in an AWS Region.
+    Description: Name of the Amazon SageMaker Studio domain
+    MaxLength: 63
+    MinLength: 1
+    Type: String
+    Default: cf-sagemaker-studio
+  pVPCId:
+    Description: Choose a VPC for SageMaker Studio
+    Type: 'AWS::EC2::VPC::Id'
+  pSubnetIds:
+    Description: Choose a subnet in an availability zone supported by Amazon SageMaker.
+    Type: 'List<AWS::EC2::Subnet::Id>'
+  pSecurityGroups:
+    Description: Configure your Security groups for SageMaker Studio (https://docs.aws.amazon.com/sagemaker/latest/dg/onboard-vpc.html)
+    Type: 'List<AWS::EC2::SecurityGroup::Id>'
+Resources:
+  SageMakerExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'cf-sm-studio-role-${AWS::Region}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSageMakerFullAccess'
+  StudioDomainVPC:
+    Type: 'AWS::SageMaker::Domain'
+    Properties:
+      AppNetworkAccessType: VpcOnly
+      AuthMode: IAM
+      DefaultUserSettings:
+        ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
+        SecurityGroups: !Ref pSecurityGroups
+      DomainName: !Ref pDomainName
+      SubnetIds: !Ref pSubnetIds
+      VpcId: !Ref pVPCId

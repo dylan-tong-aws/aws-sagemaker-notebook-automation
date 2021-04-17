@@ -1,4 +1,30 @@
 Description: "SnowFlake SageMaker Notebook"
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: SnowFlake SageMaker Notebook Configuration
+        Parameters:
+          - pSageMakerNotebookType
+    ParameterLabels:
+      pSageMakerNotebookType:
+        default: SageMaker Notebook Type
+      pNodeType:
+        default: Node Instance Type
+      pNumberOfNodes:
+        default: Number of Compute Nodes
+      pDBPortNumber:
+        default: Listener Port
+      pDatabaseName:
+        default: Database Name
+      pMasterUsername:
+        default: DB User Name
+      pMasterUserPassword:
+        default: DB User Password
+      pClusterSubnet:
+        default: DB Cluster Subnet
+      pDBSecurityGroups:
+        default: DB Cluster Security Groups
 Resources:
   SnowFlakeNotebookLifeCycleConfig:
     Type: "AWS::SageMaker::NotebookInstanceLifecycleConfig"
