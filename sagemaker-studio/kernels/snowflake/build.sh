@@ -18,6 +18,7 @@ done
 if [ -z "$region" ] || [ -z "$account" ] || [ -z "$role" ]
 then
    help
+   exit 0
 fi
 
 # Build the image
