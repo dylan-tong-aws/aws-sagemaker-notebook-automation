@@ -1,16 +1,16 @@
 {
-    "AppImageConfigName": "custom-echo-kernel-image-config",
+    "AppImageConfigName": "snowflake-tf-image-config",
     "KernelGatewayImageConfig": {
         "KernelSpecs": [
             {
-                "Name": "echo",
-                "DisplayName": "Echo"
+                "Name": "python3",
+                "DisplayName": "Python 3"
             }
         ],
         "FileSystemConfig": {
-            "MountPath": "/home/sagemaker-user",
-            "DefaultUid": 1000,
-            "DefaultGid": 100
+            "MountPath": "/root",
+            "DefaultUid": 0,
+            "DefaultGid": 0
         }
     }
 }

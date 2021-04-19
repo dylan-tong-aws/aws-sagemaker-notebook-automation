@@ -1,12 +1,12 @@
 
 {
-    "DomainId": "<domain-id>",
+    "DomainId": "d-8mpawdhcpa1v",
     "DefaultUserSettings": {
         "KernelGatewayAppSettings": {
             "CustomImages": [
                 {
-                    "ImageName": "custom-echo-kernel",
-                    "AppImageConfigName": "custom-echo-kernel-image-config"
+                    "ImageName": "snowflake-tf-kernel",
+                    "AppImageConfigName": "snowflake-tf-image-config"
                 }
             ]
         }
